@@ -1,0 +1,24 @@
+default:
+  study_alias: getting_over_it
+  identifier: src_subject_id
+  mongo:
+    collection: sing
+  qualtrics:
+    #survey_ids:
+      Institution1:
+        foo: "SV_"
+      Institution2:
+        bar: "SV_"
+  redcap:
+    #primary_key: record_id
+    #superkey: ndar_subject01
+  missing_data_codes:
+    #skipped:
+      #- -888   # Skip pattern/branching logic
+    #refused:
+      #- -9999  # Explicitly declined to answer
+      #- -1
+    #missing:
+      #- 777    # Missing for unknown reasons
+    #undefined:
+      #- -555   # Otherwise undefined value

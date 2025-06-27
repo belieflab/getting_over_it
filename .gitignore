@@ -1,0 +1,4 @@
+secrets.R
+tmp/*
+*.pem
+.wizaRdry_prefs
