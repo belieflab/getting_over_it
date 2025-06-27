@@ -1,0 +1,3 @@
+[submodule "hgf_cluster"]
+	path = hgf_cluster
+	url = git@github.com:belieflab/hgf_cluster.git
