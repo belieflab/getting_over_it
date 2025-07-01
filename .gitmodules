@@ -1,3 +1,6 @@
 [submodule "hgf_cluster"]
 	path = hgf_cluster
 	url = git@github.com:belieflab/hgf_cluster.git
+[submodule "clean"]
+	path = clean
+	url = git@github.com:CAPR-Consortium/clean.git
