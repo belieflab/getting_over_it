@@ -14,5 +14,8 @@ if(!require(wizaRdry)) {install.packages('wizaRdry')}; library(wizaRdry)
 # What collections are available in the database specified by config.yml if arg = NULL, in this case sing
 mongo.index()
 
-social_prl  <- mongo("social_prl") 
+social_prl<- mongo("social_prl") 
+
+to.csv(social_prl)
+
 

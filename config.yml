@@ -4,11 +4,37 @@ default:
   mongo:
     collection: sing
   qualtrics:
-    #survey_ids:
-      Institution1:
-        foo: "SV_"
-      Institution2:
-        bar: "SV_"
+    survey_ids:
+      yale:
+        # Phase 1
+        demo_phase1: "SV_7WzEqlJIBAOWZBc"
+        bprs_phase_1: "SV_6xr1iFt6A9cwQeO"
+        # Phase 2 - Visit 1
+        caps_lifetime: "SV_57nfMHYB4PKjavQ"
+        matrics: "SV_8p6artLWbszs7Y2"
+        chat: "SV_2tyPMexMXbIPgDs"
+        chat_old: "SV_bBq5dhlAnR9chyS"  # CHAT 1.0 survey
+        bprs_20: "SV_8omJYpwQzfbqnpc"
+        nuq: "SV_aa7uFmbrqXfV39Q"
+        scid: "SV_8dgtvDOL9yZiblQ"
+        concom_meds: "SV_9XDlr2OWxY1tmgm"
+        non_concom_meds: "SV_79cHP60m2LGos18"
+        med_hx: "SV_39IA9zvPGLxEuIC"
+        wtar: "SV_80TKuwTx6cXJ4G2"
+        wtar_2: "SV_eCMB8BUisexeFYG"
+        demo: "SV_d3YdWOfbsxbEc98"
+        # Visit 2, 7
+        bdi: "SV_8eOTwXTkIlBn5Ns"
+        pss: "SV_9EnFXjTsG5j7Szs"
+        social_network: "SV_1RhtDUHPa9xKupM"
+        bai: "SV_6g3tn44sfWrz2J0"
+        rgpts: "SV_8GoVkOUSkm3RQa2"
+        lshsr: "SV_72FIuhOyjLo3Poy"
+        pdi40: "SV_5sBA7xC9vgr54hg"
+        # Intervention
+        mpa: "SV_78aj6zqeyVwFiEC"
+        # Visits 2-7
+        checkin: "SV_3QOglFrzA5p9szQ"
   redcap:
     #primary_key: record_id
     #superkey: ndar_subject01
