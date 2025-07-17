@@ -29,14 +29,13 @@ df <- read.csv(paste("~/Downloads/", sample(list_subjects, 1), ".csv", sep = "")
 
 # Find randomly selected window to interpolate with length n, that contains no missing values
 sample_window_size <- 10
-starting_window_size <- 3
 
 get_full_sample <- function(df) {
   index <- c(1:length(df$frame))
   for (i in 1:1000) {
     sample_start <- sample(index,1)
-    sample_indexes <- c(sample_start:(sample_start + (sample_window_size + starting_window_size - 1)))
-    # Need to fix bool here bc != returns a list of TRUE/FALSE values when the if statement might need just one
+    # reduce sample_window_size by 1 to begin at index and still have window of 10, add 2 for interpolation start and end points
+    sample_indexes <- c(sample_start:(sample_start + (sample_window_size - 1) + 2))
     if (!any(df$sucess[sample_indexes] == 0)) {
       return(df[sample_indexes,])
       break
@@ -47,21 +46,43 @@ get_full_sample <- function(df) {
 }
 
 # Create list of sampled data
-sample_size <- 5
+sample_size <- 20
 sample_data <- list()
 for (i in 1:sample_size) {
   sample_data[[i]] <- get_full_sample(df)
 }
 
-
 # Create window + empty values for gaze data version
 empty_sample_data <- sample_data
 for (i in 1:sample_size) {
-  # [, 6:13] reference the position of the columns for the gaze data
-  empty_sample_data[[i]][(starting_window_size + 1):(sample_window_size + starting_window_size), 6:13] <- NA
+  # [, 6:13] reference the positions of the gaze columns
+  # [1:(sample_window_size + 1),] denotes the values in between the interpolation points at the beginning and end of a column
+  empty_sample_data[[i]][2:(sample_window_size + 1), 6:13] <- NA
 }
 
 # Code for applying the different methods to the empty values for the gaze data
 
+# Linear interpolation
+linear_interp <- function(a, b, n) {
+  seq <- seq(from = a, to = b, length.out = n)
+  return(seq[-c(1,length(seq))])
+}
+# apply linear interpolation
+for (i in 1:sample_size) {
+  for (j in 6:13) {
+    empty_sample_data[[i]][2:(sample_window_size + 1), j] <- linear_interp(empty_sample_data[[i]][1, j], empty_sample_data[[i]][sample_window_size + 2, j], sample_window_size + 2)
+    }
+}
+# create correlation matrix
+# 8 columns for number of gaze data columns
+data <- matrix(NA, nrow = sample_size, ncol = 8)
+for (i in 1:sample_size) {
+  for (j in 6:13) {
+  data[i,j - 5] <- cor(sample_data[[i]][,j],empty_sample_data[[i]][,j])
+  }
+}
+data <- data.frame(data)
+colnames(data) <- colnames(sample_data[[1]][6:13])
 
 
+# CURRENT PROBLEM WHEN STANDARD DEVIATION IS 0 IE WHEN THE FIRST AND LAST POINTS ARE THE SAME THE INTERPOLATION PRODUCES THE SAME VALUES FOR ALL VALUES, messes with cor()
