@@ -1,29 +1,26 @@
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 0) stop("No input file supplied")
 
-# Experimentally find what the "best" way to interpolate the open face data is
+input_csv <- args[1]
+df <- read.csv(input_csv)
 
-# List of methods
-# What does it mean to be the best interpolation method?
-# Maybe the "best" method means that over many sampled clusters of full raw data, the correlation between interpolated
-# versions of that sample data and the actual data there is highest amongst the different methods
-
-# Variables that affect the correlation between interpolated sample data and the true sample data
-# 1) The interpolation method being used
-# 2) The size of the chunk being removed to interpolate
-# 3) The sample size for comparing the methods
-# 4) Number of observations outside interpolation window to help with estimating
-# 5) The location of the data being interpolation, theoretically the pattern that the data best follows should change based on
-# what the subject is doing (looking around fast vs looking around slowly for example)
-
+# type: "sbatch --array=0-199 run_interpolation_all.sh" in cluster to run
+# Extract filename without extension
+filename <- tools::file_path_sans_ext(basename(input_csv))
+# output path needs MODIFICATION
+output_png_path <- "~/project/open_face_analysis/plots"
 
 # Randomly select subject data from list of subject file names
-list_subjects <- c("SING1005_P1_sing_V2_mask_DG_06-29-2021_L")
-df <- read.csv(paste("~/Downloads/", sample(list_subjects, 1), ".csv", sep = ""))
+library(ggplot2)
+library(polynom)
 focused_columns_start <- 6 # first column of column set to sample from
 focused_columns_end <- 13 # last column of column set to sample from
 number_columns <- focused_columns_end - focused_columns_start + 1
 
-# Find randomly selected window to interpolate with length sample_window_size
+# Samples sample_size # of indexes from df without replacement to sampled_data_indexes
 get_full_sample <- function(df, sample_window_size, sample_size, extra_fit_values) {
+  
+  # Create sample index list
   u <- list()
   index <- c(1:length(df$frame))
   for (i in 1:sample_size) {
@@ -73,49 +70,48 @@ get_full_sample <- function(df, sample_window_size, sample_size, extra_fit_value
   return(u)
 }
 
-
 # Function which returns correlations between sampled data (n = sample_size) 
 # in chunks of size "sample_window_size" and their linear interpolations
 linear_interpolation <- function(sample_window_size, sample_size, extra_fit_values,  sampled_data_indexes) {
-
-# Create list of sample_size number of samples
-sample_data <- list()
-for (i in 1:sample_size) {
-  sample_data[[i]] <- df[sampled_data_indexes[[i]]$indexes,(focused_columns_start:focused_columns_end)]
-}
-
-# Create window + empty values for gaze data version
-interp_sample_data <- sample_data
-for (i in 1:sample_size) {
-  interp_sample_data[[i]][(extra_fit_values + 1):(extra_fit_values + sample_window_size), 1:number_columns] <- NA
-}
-
-# Code for applying the different methods to the empty values for the gaze data
-
-# Linear interpolation
-linear_interp <- function(a, b, n) {
-  seq <- seq(from = a, to = b, length.out = n)
-  return(seq)
-}
-# apply linear interpolation
-for (i in 1:sample_size) {
-  for (j in 1:number_columns) {
-    interp_sample_data[[i]][(extra_fit_values):(extra_fit_values + sample_window_size + 1), j] <- linear_interp(interp_sample_data[[i]][extra_fit_values, j], interp_sample_data[[i]][(extra_fit_values + sample_window_size + 1), j], sample_window_size + 2)
-    }
-}
-
-# create correlation matrix
-# 8 columns for number of gaze data columns
-corr_matrix <- matrix(NA, nrow = sample_size, ncol = 8)
-for (i in 1:sample_size) {
-  for (j in 1:number_columns) {
-  corr_matrix[i,j - 5] <- cor(sample_data[[i]][,j],interp_sample_data[[i]][,j])
+  
+  # Create list of sample_size number of samples
+  sample_data <- list()
+  for (i in 1:sample_size) {
+    sample_data[[i]] <- df[sampled_data_indexes[[i]]$indexes,(focused_columns_start:focused_columns_end)]
   }
-}
-corr_matrix <- data.frame(corr_matrix)
-colnames(corr_matrix) <- colnames(sample_data[[1]][1:number_columns])
-
-return(corr_matrix)
+  
+  # Create window + empty values for gaze data version
+  linear_interp_sample_data <- sample_data
+  for (i in 1:sample_size) {
+    linear_interp_sample_data[[i]][(extra_fit_values + 1):(extra_fit_values + sample_window_size), 1:number_columns] <- NA
+  }
+  
+  # Code for applying the different methods to the empty values for the gaze data
+  
+  # Linear interpolation
+  linear_interp <- function(a, b, n) {
+    seq <- seq(from = a, to = b, length.out = n)
+    return(seq)
+  }
+  # apply linear interpolation
+  for (i in 1:sample_size) {
+    for (j in 1:number_columns) {
+      linear_interp_sample_data[[i]][(extra_fit_values):(extra_fit_values + sample_window_size + 1), j] <- linear_interp(linear_interp_sample_data[[i]][extra_fit_values, j], linear_interp_sample_data[[i]][(extra_fit_values + sample_window_size + 1), j], sample_window_size + 2)
+    }
+  }
+  
+  # create correlation matrix
+  # 8 columns for number of gaze data columns
+  corr_matrix <- matrix(NA, nrow = sample_size, ncol = number_columns)
+  for (i in 1:sample_size) {
+    for (j in 1:number_columns) {
+      corr_matrix[i,j - 5] <- cor(sample_data[[i]][,j],linear_interp_sample_data[[i]][,j])
+    }
+  }
+  corr_matrix <- data.frame(corr_matrix)
+  colnames(corr_matrix) <- colnames(sample_data[[1]][1:number_columns])
+  
+  return(corr_matrix)
 }
 
 # Function which returns correlations between sampled data (n = sample_size)
@@ -128,27 +124,27 @@ spline_interpolation <- function(sample_window_size, sample_size, extra_fit_valu
   for (i in 1:sample_size) {
     sample_data[[i]] <- df[sampled_data_indexes[[i]]$indexes,(focused_columns_start:focused_columns_end)]
   }
-
+  
   # Create window + empty values for gaze data version
-  interp_sample_data <- sample_data
+  spline_interp_sample_data <- sample_data
   for (i in 1:sample_size) {
     # Referencing the sample_window frames to turn them NA
-    interp_sample_data[[i]][(extra_fit_values + 1):(extra_fit_values + sample_window_size), 1:number_columns] <- NA
+    spline_interp_sample_data[[i]][(extra_fit_values + 1):(extra_fit_values + sample_window_size), 1:number_columns] <- NA
   }
-
+  
   # Spline interpolate missing values
   for (i in 1:sample_size){
-  for (j in 1:number_columns) {
-    interp_sample_data[[i]][,j] <- spline(sampled_data_indexes[[i]]$indexes, as.numeric(interp_sample_data[[i]][,j]), xout = head(sampled_data_indexes[[i]]$indexes, n=1):tail(sampled_data_indexes[[i]]$indexes, n=1), method = "fmm")$y
-  }
-}    
-
+    for (j in 1:number_columns) {
+      spline_interp_sample_data[[i]][,j] <- spline(sampled_data_indexes[[i]]$indexes, as.numeric(spline_interp_sample_data[[i]][,j]), xout = head(sampled_data_indexes[[i]]$indexes, n=1):tail(sampled_data_indexes[[i]]$indexes, n=1), method = "fmm")$y
+    }
+  }    
+  
   # create correlation matrix
   # 8 columns for number of gaze data columns
   corr_matrix_spline <- matrix(NA, nrow = sample_size, ncol = 8)
   for (i in 1:sample_size) {
     for (j in 1:number_columns) {
-      corr_matrix_spline[i,j - 5] <- cor(sample_data[[i]][,j],interp_sample_data[[i]][,j])
+      corr_matrix_spline[i,j - 5] <- cor(sample_data[[i]][,j],spline_interp_sample_data[[i]][,j])
     }
   }
   corr_matrix_spline <- data.frame(corr_matrix_spline)
@@ -168,7 +164,7 @@ polynomial_interpolation <- function(sample_window_size, sample_size, extra_fit_
   }
   
   # Create new list
-  interp_sample_data <- sample_data
+  poly_interp_sample_data <- sample_data
   
   # Use a polynomial to interpolate missing values
   for (i in 1:sample_size){
@@ -176,9 +172,9 @@ polynomial_interpolation <- function(sample_window_size, sample_size, extra_fit_
       # Give position vector for data points that excludes the to be interpolated values
       # and give vector of data points that excludes the to be interpolated values
       # then find the polynomial that goes through those points, evaluate the polynomial at every point in the actual column, then replace
-      x <- c(1:extra_fit_values,(extra_fit_values + sample_window_size + 1):length(interp_sample_data[[i]][,j]))
-      y <-  c(interp_sample_data[[i]][,j][1:(extra_fit_values)],interp_sample_data[[i]][,j][(extra_fit_values + sample_window_size + 1):(length(interp_sample_data[[i]][,j]))])
-      interp_sample_data[[i]][,j] <- predict(poly.calc(x,y),head(x,n=1):tail(x,n=1))
+      x <- c(1:extra_fit_values,((extra_fit_values + sample_window_size + 1):length(poly_interp_sample_data[[i]][,j])))
+      y <-  c(poly_interp_sample_data[[i]][,j][1:(extra_fit_values)],poly_interp_sample_data[[i]][,j][(extra_fit_values + sample_window_size + 1):(length(poly_interp_sample_data[[i]][,j]))])
+      poly_interp_sample_data[[i]][,j] <- predict(poly.calc(x,y),head(x,n=1):tail(x,n=1))
     }
   }  
   
@@ -187,7 +183,7 @@ polynomial_interpolation <- function(sample_window_size, sample_size, extra_fit_
   corr_matrix_poly <- matrix(NA, nrow = sample_size, ncol = 8)
   for (i in 1:sample_size) {
     for (j in 1:number_columns) {
-      corr_matrix_poly[i,j] <- cor(sample_data[[i]][,j],interp_sample_data[[i]][,j])
+      corr_matrix_poly[i,j] <- cor(sample_data[[i]][,j],poly_interp_sample_data[[i]][,j])
     }
   }
   corr_matrix_poly <- data.frame(corr_matrix_poly)
@@ -195,12 +191,9 @@ polynomial_interpolation <- function(sample_window_size, sample_size, extra_fit_
   return(corr_matrix_poly)
 }
 
-# add id = filename
-# frames within chunk, as a function of chunk size
-
 # Graphing window_size to correlation graph for different interpolation methods
-sample_window_size_c <- c(1:50)
-sample_size <- 5000
+sample_window_size_c <- c(1:20)
+sample_size <- 1000
 extra_fit_values <- 3
 for (i in 1:length(sample_window_size_c)) {
   sampled_data_indexes <- get_full_sample(df,sample_window_size_c[i],sample_size, extra_fit_values)
@@ -218,8 +211,5 @@ for (i in 1:length(sample_window_size_c)) {
   }
 }
 
-library(ggplot2)
-ggplot(for_plot, aes(x =window_size, y = cor, colour = method)) + stat_summary(geom = "line")
-
-
-  
+p <- ggplot(for_plot, aes(x = window_size, y = cor, colour = method)) + stat_summary(geom = "line")
+ggsave(filename = paste0(filename, "_interpolation_plot.png"),plot = p, path = output_png_path)
