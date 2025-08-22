@@ -1,15 +1,7 @@
 library(ggplot2)
-info_lost_table <- read.csv("~/getting_over_it/open_face_stuff/info_lost_table.csv")
-mean(info_lost_table$percent_lost)
-monte_carlo_6 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_6.csv")
-monte_carlo_5 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_5.csv")
-monte_carlo_4 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_4.csv")
-monte_carlo_3 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_3.csv")
-monte_carlo_2 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_2.csv")
-monte_carlo_1 <- read.csv("~/getting_over_it/open_face_stuff/monte_carlo_output_1.csv")
-df_list <- list(monte_carlo_1,monte_carlo_2,monte_carlo_3,monte_carlo_4,monte_carlo_5,monte_carlo_6)
 
-
+a <- c(NA,NA,NA,0,1,0,0,0,1,0,2,3,0,0,NA,NA,0,1,NA)
+spline(a, n = length(a))
 
 # What is the shape of the sampling distribution of the sample mean of correlations
 # between linearly interpolated data and true data using sample_size = 1000 and window_size = 3?

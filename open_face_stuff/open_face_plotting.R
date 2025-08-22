@@ -226,28 +226,6 @@ ggplot(summary_df, aes(x = window_size, y = mean_cor, colour = method, fill = me
 
 
 
-# percent information lost in valid_interp_indexes 
-# first graph has y axis as percent info lost and x axis is each participant, lines
-# ordered by criterion
-# second graph has y axis as average percent info lost and x axis is criterion
-info_lost_6 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_6.csv")
-info_lost_5 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_5.csv")
-info_lost_4 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_4.csv")
-info_lost_3 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_3.csv")
-info_lost_2 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_2.csv")
-info_lost_1 <- read.csv("~/getting_over_it/open_face_stuff/info_lost_1.csv")
-
-df_names <- c("info_lost_1", "info_lost_2","info_lost_3","info_lost_4","info_lost_5","info_lost_6")
-
-vec_means <- c()
-for (names in 1:length((df_names))) {
-  df <- get(df_names[names])
-  vec_means[names] <- mean(df$percent_lost)
-}
-
-plot(x = 1:6,y = vec_means, xlab = "criterion", ylab = "mean correlation")
-
-
 # plotting zoomed in
 nrows <- 2*extra_fit_values + sample_window_size
 # make dataframe where the columns are the real and interpolated gaze columns for a sample
